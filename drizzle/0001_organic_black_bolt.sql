@@ -1,0 +1,1 @@
+CREATE INDEX `idx_practice_attempts_user_created` ON `practice_attempts` (`user_id`,`created_at`);
