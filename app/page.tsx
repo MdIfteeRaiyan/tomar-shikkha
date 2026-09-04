@@ -8,15 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { scienceQuestions, type ScienceQuestion } from "@/data/class-8-science";
+import { class8ScienceMore } from "@/data/class-8-science-expansion";
 import { banglaQuestions, bgsQuestions, englishQuestions, mathQuestions } from "@/data/class-8-main-subjects";
 import { class7BanglaQuestions, class7BgsQuestions, class7EnglishQuestions, class7MathQuestions, class7ScienceQuestions } from "@/data/class-7-main-subjects";
 import { class6BanglaQuestions, class6BgsQuestions, class6EnglishQuestions, class6MathQuestions, class6ScienceQuestions } from "@/data/class-6-main-subjects";
 import { BreakZone } from "@/components/play-zone";
 import { class5BanglaQuestions, class5BgsQuestions, class5EnglishQuestions, class5MathQuestions, class5ScienceQuestions } from "@/data/class-5-main-subjects";
-import { class5MathMore, class5ScienceMore, class6MathMore, class6ScienceMore, class7MathMore, class7ScienceMore } from "@/data/expansion-questions";
+import { class5MathDepth, class5MathMore, class5ScienceDepth, class5ScienceMore, class6MathDepth, class6MathMore, class6ScienceDepth, class6ScienceMore, class7MathDepth, class7MathMore, class7ScienceDepth, class7ScienceMore } from "@/data/expansion-questions";
 import { isCloudConfigured, supabase } from "@/lib/supabase";
 import { auditCurriculum } from "@/lib/content-audit";
 import { CuriosityPop } from "@/components/curiosity-pop";
+import { QuestZone } from "@/components/quest-zone";
 import { buildPracticeQuestions, getDifficulty, shuffleQuestions as shuffled, type Difficulty } from "@/lib/quiz-engine";
 
 type PracticeAttempt = { id: number; subject: string; chapter: string; score: number; total: number; focusArea: string; createdAt: number };
@@ -27,26 +29,27 @@ const ATTEMPTS_STORAGE_KEY = "tomar-shikkha-attempts-v1";
 const PROFILES_STORAGE_KEY = "tomar-shikkha-profiles-v1";
 const ACTIVE_PROFILE_KEY = "tomar-shikkha-active-profile-v1";
 const REWARDS_STORAGE_KEY = "tomar-shikkha-rewards-v1";
+const QUEST_STARS_STORAGE_KEY = "tomar-shikkha-quest-stars-v1";
 type LearnerProfile = { id: string; name: string; avatar: string; classKey: ClassKey };
 const starterProfile: LearnerProfile = { id: "little-explorer", name: "Little Explorer", avatar: "🚀", classKey: "8" };
 const coverage = [
-  { className: "Class 5", status: "Live", subjects: "5 main subjects • 51 reviewed questions" },
-  { className: "Class 6", status: "Live", subjects: "5 main subjects • 51 reviewed questions" },
-  { className: "Class 7", status: "Live", subjects: "5 main subjects • 51 reviewed questions" },
-  { className: "Class 8", status: "Live", subjects: "5 main subjects • 130 curriculum questions" },
+  { className: "Class 5", status: "Live", subjects: "5 main subjects • 59 reviewed questions" },
+  { className: "Class 6", status: "Live", subjects: "5 main subjects • 59 reviewed questions" },
+  { className: "Class 7", status: "Live", subjects: "5 main subjects • 59 reviewed questions" },
+  { className: "Class 8", status: "Live", subjects: "5 main subjects • 158 curriculum questions" },
 ];
 const curriculumCatalog: Record<ClassKey, Record<SubjectKey, { label: string; questions: ScienceQuestion[] }>> = {
   "5": {
-    science: { label: "Science", questions: [...class5ScienceQuestions, ...class5ScienceMore] }, math: { label: "Mathematics", questions: [...class5MathQuestions, ...class5MathMore] }, english: { label: "English", questions: class5EnglishQuestions }, bangla: { label: "Bangla", questions: class5BanglaQuestions }, bgs: { label: "Bangladesh & Global Studies", questions: class5BgsQuestions },
+    science: { label: "Science", questions: [...class5ScienceQuestions, ...class5ScienceMore, ...class5ScienceDepth] }, math: { label: "Mathematics", questions: [...class5MathQuestions, ...class5MathMore, ...class5MathDepth] }, english: { label: "English", questions: class5EnglishQuestions }, bangla: { label: "Bangla", questions: class5BanglaQuestions }, bgs: { label: "Bangladesh & Global Studies", questions: class5BgsQuestions },
   },
   "6": {
-    science: { label: "Science", questions: [...class6ScienceQuestions, ...class6ScienceMore] }, math: { label: "Mathematics", questions: [...class6MathQuestions, ...class6MathMore] }, english: { label: "English", questions: class6EnglishQuestions }, bangla: { label: "Bangla", questions: class6BanglaQuestions }, bgs: { label: "Bangladesh & Global Studies", questions: class6BgsQuestions },
+    science: { label: "Science", questions: [...class6ScienceQuestions, ...class6ScienceMore, ...class6ScienceDepth] }, math: { label: "Mathematics", questions: [...class6MathQuestions, ...class6MathMore, ...class6MathDepth] }, english: { label: "English", questions: class6EnglishQuestions }, bangla: { label: "Bangla", questions: class6BanglaQuestions }, bgs: { label: "Bangladesh & Global Studies", questions: class6BgsQuestions },
   },
   "7": {
-    science: { label: "Science", questions: [...class7ScienceQuestions, ...class7ScienceMore] }, math: { label: "Mathematics", questions: [...class7MathQuestions, ...class7MathMore] }, english: { label: "English", questions: class7EnglishQuestions }, bangla: { label: "Bangla", questions: class7BanglaQuestions }, bgs: { label: "Bangladesh & Global Studies", questions: class7BgsQuestions },
+    science: { label: "Science", questions: [...class7ScienceQuestions, ...class7ScienceMore, ...class7ScienceDepth] }, math: { label: "Mathematics", questions: [...class7MathQuestions, ...class7MathMore, ...class7MathDepth] }, english: { label: "English", questions: class7EnglishQuestions }, bangla: { label: "Bangla", questions: class7BanglaQuestions }, bgs: { label: "Bangladesh & Global Studies", questions: class7BgsQuestions },
   },
   "8": {
-    science: { label: "Science", questions: scienceQuestions }, math: { label: "Mathematics", questions: mathQuestions }, english: { label: "English", questions: englishQuestions }, bangla: { label: "Bangla", questions: banglaQuestions }, bgs: { label: "Bangladesh & Global Studies", questions: bgsQuestions },
+    science: { label: "Science", questions: [...scienceQuestions, ...class8ScienceMore] }, math: { label: "Mathematics", questions: mathQuestions }, english: { label: "English", questions: englishQuestions }, bangla: { label: "Bangla", questions: banglaQuestions }, bgs: { label: "Bangladesh & Global Studies", questions: bgsQuestions },
   },
 };
 const difficultyCopy: Record<Difficulty, { label: string; hint: string }> = {
@@ -56,7 +59,7 @@ const difficultyCopy: Record<Difficulty, { label: string; hint: string }> = {
 };
 
 export default function Home() {
-  const [screen, setScreen] = useState<"setup" | "quiz" | "result" | "break" | "guardian" | "content-check">("setup");
+  const [screen, setScreen] = useState<"setup" | "quiz" | "result" | "break" | "quest" | "guardian" | "content-check">("setup");
   const [selectedClass, setSelectedClass] = useState<ClassKey>("8");
   const [selectedSubject, setSelectedSubject] = useState<SubjectKey>("science");
   const [selectedChapter, setSelectedChapter] = useState("all");
@@ -69,6 +72,7 @@ export default function Home() {
   const [revealed, setRevealed] = useState(false);
   const [attempts, setAttempts] = useState<PracticeAttempt[]>([]);
   const [redemptions, setRedemptions] = useState<RewardRedemption[]>([]);
+  const [questStars, setQuestStars] = useState(0);
   const [profiles, setProfiles] = useState<LearnerProfile[]>([starterProfile]);
   const [activeProfileId, setActiveProfileId] = useState(starterProfile.id);
   const [localReady, setLocalReady] = useState(false);
@@ -79,7 +83,7 @@ export default function Home() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const earnedStars = useMemo(() => attempts.reduce((sum, attempt) => sum + attempt.score * 10, 0), [attempts]);
   const spentStars = useMemo(() => redemptions.reduce((sum, reward) => sum + reward.cost, 0), [redemptions]);
-  const powerStars = Math.max(0, earnedStars - spentStars);
+  const powerStars = Math.max(0, earnedStars + questStars - spentStars);
   const score = useMemo(() => answers.reduce<number>((sum, answer, index) => sum + (answer === quizQuestions[index]?.answer ? 1 : 0), 0), [answers, quizQuestions]);
   const wrongTopics = useMemo(() => quizQuestions.filter((question, index) => answers[index] !== null && answers[index] !== question.answer).map((question) => question.topic), [answers, quizQuestions]);
   const wrongQuestions = useMemo(() => quizQuestions.filter((question, index) => answers[index] !== null && answers[index] !== question.answer), [answers, quizQuestions]);
@@ -107,8 +111,9 @@ export default function Home() {
         const savedAttempts = window.localStorage.getItem(`${ATTEMPTS_STORAGE_KEY}:${nextActive.id}`) ?? window.localStorage.getItem(ATTEMPTS_STORAGE_KEY);
         if (savedAttempts) setAttempts(JSON.parse(savedAttempts));
         setRedemptions(JSON.parse(window.localStorage.getItem(`${REWARDS_STORAGE_KEY}:${nextActive.id}`) ?? "[]"));
+        setQuestStars(Number(window.localStorage.getItem(`${QUEST_STARS_STORAGE_KEY}:${nextActive.id}`) ?? "0"));
       } catch {
-        setAttempts([]); setRedemptions([]);
+        setAttempts([]); setRedemptions([]); setQuestStars(0);
       } finally { setLocalReady(true); }
     });
     return () => { active = false; };
@@ -210,19 +215,19 @@ export default function Home() {
     const profile = profiles.find((item) => item.id === profileId); if (!profile) return;
     setActiveProfileId(profileId); setSelectedClass(profile.classKey); setSelectedChapter("all"); setScreen("setup");
     window.localStorage.setItem(ACTIVE_PROFILE_KEY, profileId);
-    try { setAttempts(JSON.parse(window.localStorage.getItem(`${ATTEMPTS_STORAGE_KEY}:${profileId}`) ?? "[]")); setRedemptions(JSON.parse(window.localStorage.getItem(`${REWARDS_STORAGE_KEY}:${profileId}`) ?? "[]")); } catch { setAttempts([]); setRedemptions([]); }
+    try { setAttempts(JSON.parse(window.localStorage.getItem(`${ATTEMPTS_STORAGE_KEY}:${profileId}`) ?? "[]")); setRedemptions(JSON.parse(window.localStorage.getItem(`${REWARDS_STORAGE_KEY}:${profileId}`) ?? "[]")); setQuestStars(Number(window.localStorage.getItem(`${QUEST_STARS_STORAGE_KEY}:${profileId}`) ?? "0")); } catch { setAttempts([]); setRedemptions([]); setQuestStars(0); }
   };
   const addProfile = (name: string, classKey: ClassKey) => {
     const cleanName = name.trim().slice(0, 20); if (!cleanName) return;
     const avatars = ["🚀", "🦊", "🐼", "🦁", "🦉", "🐯"];
     const profile = { id: `learner-${Date.now()}`, name: cleanName, avatar: avatars[profiles.length % avatars.length], classKey };
-    const nextProfiles = [...profiles, profile]; setProfiles(nextProfiles); setActiveProfileId(profile.id); setSelectedClass(profile.classKey); setSelectedChapter("all"); setAttempts([]); setRedemptions([]); setScreen("setup");
+    const nextProfiles = [...profiles, profile]; setProfiles(nextProfiles); setActiveProfileId(profile.id); setSelectedClass(profile.classKey); setSelectedChapter("all"); setAttempts([]); setRedemptions([]); setQuestStars(0); setScreen("setup");
     window.localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(nextProfiles)); window.localStorage.setItem(ACTIVE_PROFILE_KEY, profile.id);
   };
   const redeemReward = (rewardId: string, cost: number) => {
     let currentRewards = redemptions;
     try { currentRewards = JSON.parse(window.localStorage.getItem(`${REWARDS_STORAGE_KEY}:${activeProfileId}`) ?? "[]"); } catch { currentRewards = redemptions; }
-    const availableStars = Math.max(0, earnedStars - currentRewards.reduce((sum, reward) => sum + reward.cost, 0));
+    const availableStars = Math.max(0, earnedStars + questStars - currentRewards.reduce((sum, reward) => sum + reward.cost, 0));
     if (cost > availableStars) return false;
     const redeemedAt = Date.now();
     const reward = { id: redeemedAt, rewardId, cost, createdAt: redeemedAt };
@@ -231,6 +236,11 @@ export default function Home() {
     window.localStorage.setItem(`${REWARDS_STORAGE_KEY}:${activeProfileId}`, JSON.stringify(next));
     return true;
   };
+  const earnQuestStars = (stars: number) => setQuestStars((currentStars) => {
+    const nextStars = currentStars + stars;
+    window.localStorage.setItem(`${QUEST_STARS_STORAGE_KEY}:${activeProfileId}`, String(nextStars));
+    return nextStars;
+  });
 
   const startQuiz = () => {
     const subjectQuestions = curriculumCatalog[selectedClass][selectedSubject].questions;
@@ -276,21 +286,23 @@ export default function Home() {
   return <main className="min-h-screen">
     <header className="site-header"><div className="shell header-inner">
       <button className="brand" onClick={() => setScreen("setup")} aria-label="TomarShikkha home"><span className="brand-mark">ত</span><span className="brand-name">Tomar<span>Shikkha</span></span></button>
-      <nav className="main-nav" aria-label="Main navigation"><button className={`nav-link ${screen !== "break" ? "active" : ""}`} onClick={() => showSection("practice-builder")}>Smart Practice</button><button className="nav-link" onClick={() => showSection("curriculum-map")}>Curriculum Map</button><button className={`nav-link ${screen === "break" ? "active" : ""}`} onClick={() => setScreen("break")}><Gamepad2 size={17} /> Break Zone</button></nav>
+      <nav className="main-nav" aria-label="Main navigation"><button className={`nav-link ${["setup", "quiz", "result"].includes(screen) ? "active" : ""}`} onClick={() => showSection("practice-builder")}>Smart Practice</button><button className="nav-link" onClick={() => showSection("curriculum-map")}>Curriculum Map</button><button className={`nav-link ${screen === "quest" ? "active" : ""}`} onClick={() => setScreen("quest")}><Compass size={17} /> Quest</button><button className={`nav-link ${screen === "break" ? "active" : ""}`} onClick={() => setScreen("break")}><Gamepad2 size={17} /> Break Zone</button></nav>
       <button className={`guardian-link ${screen === "guardian" ? "active" : ""}`} onClick={() => setScreen("guardian")}><ShieldCheck size={17} /><span>Guardian View</span></button>
       <AccountMenu attempts={attempts} selectedClass={selectedClass} powerStars={powerStars} profiles={profiles} activeProfileId={activeProfileId} onSwitch={switchProfile} onAdd={addProfile} cloudConfigured={isCloudConfigured} cloudUserEmail={cloudUserEmail} cloudStatus={cloudStatus} cloudMessage={cloudMessage} onCloudSignIn={sendMagicLink} onCloudSignOut={signOutCloud} />
     </div></header>
-    {screen === "setup" && <SetupScreen onStart={startQuiz} onSmartMission={startSmartMission} onBreak={() => setScreen("break")} onContentCheck={() => setScreen("content-check")} attempts={attempts} selectedClass={selectedClass} setSelectedClass={(value) => { setSelectedClass(value); setSelectedChapter("all"); }} selectedSubject={selectedSubject} setSelectedSubject={(value) => { setSelectedSubject(value); setSelectedChapter("all"); }} selectedChapter={selectedChapter} setSelectedChapter={setSelectedChapter} questionCount={questionCount} setQuestionCount={setQuestionCount} difficulty={difficulty} setDifficulty={setDifficulty} />}
+    {screen === "setup" && <SetupScreen onStart={startQuiz} onSmartMission={startSmartMission} onQuest={() => setScreen("quest")} onBreak={() => setScreen("break")} onContentCheck={() => setScreen("content-check")} attempts={attempts} selectedClass={selectedClass} setSelectedClass={(value) => { setSelectedClass(value); setSelectedChapter("all"); }} selectedSubject={selectedSubject} setSelectedSubject={(value) => { setSelectedSubject(value); setSelectedChapter("all"); }} selectedChapter={selectedChapter} setSelectedChapter={setSelectedChapter} questionCount={questionCount} setQuestionCount={setQuestionCount} difficulty={difficulty} setDifficulty={setDifficulty} />}
     {screen === "quiz" && <QuizScreen questions={quizQuestions} classLabel={selectedClass} subjectLabel={curriculumCatalog[selectedClass][selectedSubject].label} difficulty={difficulty} practiceMode={practiceMode} current={current} answer={answers[current]} revealed={revealed} onAnswer={chooseAnswer} onNext={nextQuestion} onBack={() => { if (current === 0) setScreen("setup"); else { setCurrent((v) => v - 1); setRevealed(true); } }} />}
     {screen === "result" && <ResultScreen score={score} total={quizQuestions.length} wrongTopics={wrongTopics} saveState={saveState} onRetry={startQuiz} onFocus={startFocusedPractice} onHome={() => setScreen("setup")} />}
     {screen === "break" && <BreakZone onBack={() => setScreen("setup")} powerStars={powerStars} redemptions={redemptions} onRedeem={redeemReward} />}
-    {screen === "guardian" && <GuardianDashboard profiles={profiles} attemptsByProfile={guardianAttempts} cloudUserEmail={cloudUserEmail} cloudStatus={cloudStatus} onBack={() => setScreen("setup")} onOpenLearner={(profileId) => switchProfile(profileId)} />}
+    {screen === "quest" && <QuestZone classKey={selectedClass} profileId={activeProfileId} powerStars={powerStars} onEarn={earnQuestStars} onBack={() => setScreen("setup")} />}
+    {screen === "guardian" && <GuardianDashboard profiles={profiles} attemptsByProfile={guardianAttempts} powerStars={powerStars} cloudUserEmail={cloudUserEmail} cloudStatus={cloudStatus} onBack={() => setScreen("setup")} onOpenLearner={(profileId) => switchProfile(profileId)} />}
     {screen === "content-check" && <ContentVerification onBack={() => setScreen("setup")} />}
     <CuriosityPop enabled={screen === "setup" || screen === "break"} />
   </main>;
 }
 
-function SetupScreen({ onStart, onSmartMission, onBreak, onContentCheck, attempts, selectedClass, setSelectedClass, selectedSubject, setSelectedSubject, selectedChapter, setSelectedChapter, questionCount, setQuestionCount, difficulty, setDifficulty }: { onStart: () => void; onSmartMission: () => void; onBreak: () => void; onContentCheck: () => void; attempts: PracticeAttempt[]; selectedClass: ClassKey; setSelectedClass: (value: ClassKey) => void; selectedSubject: SubjectKey; setSelectedSubject: (value: SubjectKey) => void; selectedChapter: string; setSelectedChapter: (value: string) => void; questionCount: string; setQuestionCount: (value: string) => void; difficulty: Difficulty; setDifficulty: (value: Difficulty) => void }) {
+function SetupScreen({ onStart, onSmartMission, onQuest, onBreak, onContentCheck, attempts, selectedClass, setSelectedClass, selectedSubject, setSelectedSubject, selectedChapter, setSelectedChapter, questionCount, setQuestionCount, difficulty, setDifficulty }: { onStart: () => void; onSmartMission: () => void; onQuest: () => void; onBreak: () => void; onContentCheck: () => void; attempts: PracticeAttempt[]; selectedClass: ClassKey; setSelectedClass: (value: ClassKey) => void; selectedSubject: SubjectKey; setSelectedSubject: (value: SubjectKey) => void; selectedChapter: string; setSelectedChapter: (value: string) => void; questionCount: string; setQuestionCount: (value: string) => void; difficulty: Difficulty; setDifficulty: (value: Difficulty) => void }) {
+  const [currentTime] = useState(() => Date.now());
   const catalog = curriculumCatalog[selectedClass][selectedSubject];
   const chapters = [{ value: "all", label: "সব অধ্যায়", count: catalog.questions.length }, ...Array.from(new Map(catalog.questions.map((question) => [question.chapterNo, question])).values()).sort((a, b) => a.chapterNo - b.chapterNo).map((question) => ({ value: String(question.chapterNo), label: question.chapter, count: catalog.questions.filter((item) => item.chapterNo === question.chapterNo).length }))];
   const chapterPool = selectedChapter === "all" ? catalog.questions : catalog.questions.filter((q) => String(q.chapterNo) === selectedChapter);
@@ -307,7 +319,9 @@ function SetupScreen({ onStart, onSmartMission, onBreak, onContentCheck, attempt
     const chapterQuestion = catalog.questions.find((question) => String(question.chapterNo) === chapter.value);
     const chapterAttempts = attempts.filter((attempt) => attempt.subject === catalog.label && attempt.chapter.includes(`Class ${selectedClass}`) && (attempt.chapter.includes(chapter.label) || attempt.focusArea === chapterQuestion?.topic));
     const score = chapterAttempts.length ? Math.round(chapterAttempts.reduce((sum, attempt) => sum + attempt.score / attempt.total * 100, 0) / chapterAttempts.length) : 0;
-    const status = !chapterAttempts.length ? "Not started" : score >= 80 ? "Mastered" : score >= 60 ? "Improving" : "Learning";
+    const lastPracticeAt = chapterAttempts.length ? Math.max(...chapterAttempts.map((attempt) => attempt.createdAt)) : 0;
+    const revisionDue = score >= 80 && currentTime - lastPracticeAt >= 7 * 24 * 60 * 60 * 1000;
+    const status = !chapterAttempts.length ? "Not started" : revisionDue ? "Revision Due" : score >= 80 ? "Mastered" : score >= 60 ? "Improving" : "Learning";
     return { ...chapter, score, status, attempts: chapterAttempts.length };
   });
   const learningAreas = [
@@ -316,8 +330,8 @@ function SetupScreen({ onStart, onSmartMission, onBreak, onContentCheck, attempt
     { label: "Practice rhythm", value: practiceRhythm, color: "#3b82c4" },
   ];
   return <div className="shell page-pad">
-    <section className="welcome-strip"><div><p className="eyebrow">NCTB 2026 • BANGLA MEDIUM</p><h1>Ready, little champion? 🌟</h1><p>আজকের ছোট practice-ই তোমাকে কাল আরও confident করবে।</p></div><div className="streak-pill"><Sparkles size={18} /> Classes 5–8 • 20 subject tracks</div></section>
-    <section className={`daily-quest ${practicedToday ? "complete" : ""}`}><span className="quest-icon">{practicedToday ? "🏆" : "🎯"}</span><div><p className="eyebrow">TODAY&apos;S SMART MISSION</p><strong>{practicedToday ? "আজকের mission complete—চাইলে next level চেষ্টা করো!" : missionText}</strong><small>{attempts.length ? "তোমার আগের শেখার তথ্য থেকে missionটি তৈরি হয়েছে।" : "প্রথম mission শেষে পরেরটি তোমার ফল অনুযায়ী বদলাবে।"}</small></div><div className="quest-actions"><button className="mission-start" onClick={onSmartMission}><BrainCircuit size={15} /> Start Mission</button><button className="quest-status" onClick={onBreak}><Gamepad2 size={15} /> Break Zone</button></div></section>
+    <section className="welcome-strip"><div><p className="eyebrow">NCTB 2026 • BANGLA MEDIUM</p><h1>Ready, little champion? 🌟</h1><p className="brand-tagline">শেখো। খেলো। এগিয়ে চলো। <span>Learn it. Play it. Own it.</span></p></div><div className="streak-pill"><Sparkles size={18} /> Classes 5–8 • 20 subject tracks</div></section>
+    <section className={`daily-quest ${practicedToday ? "complete" : ""}`}><span className="quest-icon">{practicedToday ? "🏆" : "🎯"}</span><div><p className="eyebrow">TODAY&apos;S SMART MISSION</p><strong>{practicedToday ? "আজকের mission complete—চাইলে next level চেষ্টা করো!" : missionText}</strong><small>{attempts.length ? "তোমার আগের শেখার তথ্য থেকে missionটি তৈরি হয়েছে।" : "প্রথম mission শেষে পরেরটি তোমার ফল অনুযায়ী বদলাবে।"}</small></div><div className="quest-actions"><button className="mission-start" onClick={onSmartMission}><BrainCircuit size={15} /> Start Mission</button><button className="quest-status" onClick={onQuest}><Compass size={15} /> Fun Quest</button><button className="quest-status" onClick={onBreak}><Gamepad2 size={15} /> Break Zone</button></div></section>
     <div className="dashboard-grid">
       <section className="practice-card" id="practice-builder">
         <Heading icon={<BrainCircuit size={22} />} eyebrow="SMART PRACTICE" title="Choose your next challenge" tone="teal" />
@@ -339,7 +353,7 @@ function SetupScreen({ onStart, onSmartMission, onBreak, onContentCheck, attempt
       </aside>
     </div>
     <section className="mastery-section" id="curriculum-map"><div className="curriculum-heading"><div><p className="eyebrow">YOUR MASTERY MAP</p><h2>Class {selectedClass} • {catalog.label}</h2></div><span>{masteryChapters.filter((chapter) => chapter.status === "Mastered").length}/{masteryChapters.length} mastered</span></div><p className="mastery-intro">প্রতিটি practice-এর সঙ্গে chapterগুলো Not Started থেকে Mastered-এর দিকে এগোবে।</p><div className="mastery-grid">{masteryChapters.map((chapter) => <article key={chapter.value} className={`mastery-card ${chapter.status.toLowerCase().replace(" ", "-")}`}><div className="mastery-top"><span className="chapter-number">{chapter.value}</span><span className="mastery-status">{chapter.status}</span></div><h3>{chapter.label}</h3><div className="mastery-progress"><span style={{ width: `${chapter.score}%` }} /></div><div className="mastery-meta"><span>{chapter.attempts ? `${chapter.attempts} practice${chapter.attempts === 1 ? "" : "s"}` : "Ready to explore"}</span><strong>{chapter.score}%</strong></div><button onClick={() => { setSelectedChapter(chapter.value); document.getElementById("practice-builder")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>{chapter.attempts ? "Practice again" : "Start chapter"} <ArrowRight size={14} /></button></article>)}</div></section>
-    <section className="curriculum-section coverage-compact"><div className="curriculum-heading"><div><p className="eyebrow">CLASS 5–8 COVERAGE</p><h2>All four classes are live</h2></div><span>283 questions</span></div><div className="coverage-grid">{coverage.map((item) => <article key={item.className} className={item.status === "Live" ? "live" : ""}><div><h3>{item.className}</h3><span>{item.status}</span></div><p>{item.subjects}</p></article>)}</div></section>
+    <section className="curriculum-section coverage-compact"><div className="curriculum-heading"><div><p className="eyebrow">CLASS 5–8 COVERAGE</p><h2>All four classes are live</h2></div><span>335 questions</span></div><div className="coverage-grid">{coverage.map((item) => <article key={item.className} className={item.status === "Live" ? "live" : ""}><div><h3>{item.className}</h3><span>{item.status}</span></div><p>{item.subjects}</p></article>)}</div></section>
     <footer className="creator-card"><span className="creator-icon"><Code2 size={24} /></span><div><p className="eyebrow">BUILT BY A LEARNER, FOR LEARNERS</p><h2>Md. Iftee Raiyan</h2><p>CSE Undergraduate at East West University—exploring software development, problem-solving, and learning by building.</p></div><div className="creator-actions"><button onClick={onContentCheck}><BadgeCheck size={16} /> Content Check</button><a href="https://www.linkedin.com/in/md-iftee-raiyan-b20336386/" target="_blank" rel="noreferrer">View LinkedIn <ExternalLink size={16} /></a></div></footer>
   </div>;
 }
@@ -348,7 +362,7 @@ function QuizScreen({ questions, classLabel, subjectLabel, difficulty, practiceM
   const question = questions[current]; const correct = answer === question.answer;
   return <div className="quiz-shell"><div className="quiz-topline"><button className="back-link" onClick={onBack}><ArrowLeft size={18} /> ফিরে যাই</button><span>Class {classLabel} • {subjectLabel} • {practiceMode === "focus" ? "Smart Review" : difficultyCopy[difficulty].label} • NCTB 2026</span></div><Progress value={((current + 1) / questions.length) * 100} className="quiz-progress" /><div className="question-count">প্রশ্ন {current + 1} / {questions.length} <span>•</span> {practiceMode === "focus" ? "আবার শেখা" : difficultyCopy[difficulty].label} <span>•</span> {question.chapter} <span>•</span> {question.topic}</div>
     <section className="question-card"><div className="question-icon"><BookOpen size={24} /></div><h1>{question.prompt}</h1><div className="option-list">{question.options.map((option, index) => { const isCorrect = revealed && index === question.answer; const isWrong = revealed && answer === index && index !== question.answer; return <button key={option} onClick={() => onAnswer(index)} className={`${answer === index ? "chosen" : ""} ${isCorrect ? "correct" : ""} ${isWrong ? "wrong" : ""}`}><span className="option-letter">{String.fromCharCode(65 + index)}</span><span>{option}</span>{isCorrect && <Check size={20} />}</button>; })}</div>
-      {revealed && <><div className={`explanation ${correct ? "success" : "review"}`}><Lightbulb size={22} /><div><strong>{correct ? "ঠিক হয়েছে! +10 Power Stars ⭐" : "ভালো চেষ্টা—চলো সহজ করে বুঝি"}</strong><p>{question.explanation}</p></div></div><div className="origin-card"><BookMarked size={21} /><div><strong>তোমার textbook থেকে</strong><p>{question.origin}</p><a href={question.sourceUrl} target="_blank" rel="noreferrer">Official NCTB book list দেখো <ExternalLink size={13} /></a><span>Chapter matched • Page-by-page checking চলছে</span></div></div></>}
+      {revealed && <><div className={`explanation ${correct ? "success" : "review"}`}><Lightbulb size={22} /><div><strong>{correct ? "ঠিক হয়েছে! +10 Power Stars ⭐" : `সঠিক উত্তর: ${question.options[question.answer]}`}</strong>{!correct && <span className="answer-why">তোমার বেছে নেওয়া উত্তরটি কেন মিলছে না, explanation থেকে বুঝে নাও।</span>}<p><b>কেন?</b> {question.explanation}</p></div></div><div className="origin-card"><BookMarked size={21} /><div><strong>তোমার textbook থেকে</strong><p>{question.origin}</p><a href={question.sourceUrl} target="_blank" rel="noreferrer">Official NCTB book list দেখো <ExternalLink size={13} /></a><span>Chapter verified • Exact page reference review চলছে</span></div></div></>}
       <div className="quiz-actions"><span>{answer === null ? "একটি উত্তর বেছে নাও" : revealed ? "ব্যাখ্যাটি পড়ে পরের প্রশ্নে যাও" : "Ready? এবার উত্তর মিলিয়ে দেখো"}</span><Button onClick={onNext} disabled={answer === null} size="lg" className="next-button">{revealed ? (current === questions.length - 1 ? "ফলাফল দেখি" : "পরের প্রশ্ন") : "উত্তর মিলাই"} <ArrowRight /></Button></div>
     </section></div>;
 }
@@ -362,7 +376,7 @@ function ResultScreen({ score, total, wrongTopics, saveState, onRetry, onFocus, 
 
 function RecentPractice({ attempts }: { attempts: PracticeAttempt[] }) { return <section className="recent-card" id="recent-history"><div className="recent-heading"><div><p className="eyebrow">RECENT PRACTICE</p><h3>Your saved progress</h3></div><span>{attempts.length}</span></div>{attempts.length === 0 ? <p className="recent-empty">Complete your first quiz—result এখানে automatically save হবে।</p> : <div className="attempt-list">{attempts.slice(0, 3).map((attempt) => <div key={attempt.id}><span className="attempt-score">{attempt.score}/{attempt.total}</span><div><strong>{attempt.subject}</strong><small>{attempt.chapter} • {new Date(attempt.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</small></div></div>)}</div>}</section>; }
 
-function GuardianDashboard({ profiles, attemptsByProfile, cloudUserEmail, cloudStatus, onBack, onOpenLearner }: { profiles: LearnerProfile[]; attemptsByProfile: Record<string, PracticeAttempt[]>; cloudUserEmail: string | null; cloudStatus: "guest" | "connecting" | "synced" | "error"; onBack: () => void; onOpenLearner: (profileId: string) => void }) {
+function GuardianDashboard({ profiles, attemptsByProfile, powerStars, cloudUserEmail, cloudStatus, onBack, onOpenLearner }: { profiles: LearnerProfile[]; attemptsByProfile: Record<string, PracticeAttempt[]>; powerStars: number; cloudUserEmail: string | null; cloudStatus: "guest" | "connecting" | "synced" | "error"; onBack: () => void; onOpenLearner: (profileId: string) => void }) {
   const allAttempts = profiles.flatMap((profile) => attemptsByProfile[profile.id] ?? []);
   const [weekStart] = useState(() => Date.now() - 7 * 24 * 60 * 60 * 1000);
   const weeklyAttempts = allAttempts.filter((attempt) => attempt.createdAt >= weekStart);
@@ -370,7 +384,7 @@ function GuardianDashboard({ profiles, attemptsByProfile, cloudUserEmail, cloudS
   const practicedDays = new Set(weeklyAttempts.map((attempt) => new Date(attempt.createdAt).toDateString())).size;
   const latestFocus = [...allAttempts].sort((a, b) => b.createdAt - a.createdAt).find((attempt) => attempt.focusArea !== "Revision Complete")?.focusArea;
   const guidance = !allAttempts.length ? "একসঙ্গে প্রথম একটি ছোট practice বেছে দিন। শুরু করাটাই আজকের সাফল্য।" : average < 50 ? "ভুলের জন্য চাপ দেবেন না। ৫–৭টি সহজ প্রশ্ন দিয়ে দুর্বল বিষয়টি আবার practice করতে দিন।" : average < 75 ? "প্রতিদিন ১০ মিনিট practice ধরে রাখুন। সঠিক উত্তরটি কেন ঠিক, তা শিশুকে নিজের ভাষায় বলতে বলুন।" : "Progress ভালো হচ্ছে। এবার Medium বা Hard challenge বেছে নিতে উৎসাহ দিন।";
-  return <div className="guardian-shell"><div className="guardian-top"><button className="back-link" onClick={onBack}><ArrowLeft size={18} /> শেখার পাতায় ফিরুন</button><div className={`guardian-cloud ${cloudStatus}`}><span>{cloudUserEmail ? "☁️" : "💻"}</span><div><strong>{cloudUserEmail ? "Cloud backup চালু আছে" : "এই device-এ save আছে"}</strong><small>{cloudUserEmail ?? "অন্য device-এ দেখতে পরে sign in করুন"}</small></div></div></div><section className="guardian-hero"><div><p className="eyebrow">GUARDIAN VIEW</p><h1>শিশুর শেখার সহজ চিত্র</h1><p>সহজ ভাষায় দেখুন—কোথায় ভালো করছে এবং এখন কীভাবে সাহায্য করবেন।</p></div><span className="guardian-hero-icon"><HeartHandshake size={30} /></span></section><div className="guardian-stats"><article><Users size={21} /><span>শিক্ষার্থী</span><strong>{profiles.length}</strong><small>আলাদা learning profile</small></article><article><CalendarDays size={21} /><span>গত ৭ দিন</span><strong>{weeklyAttempts.length}</strong><small>{practicedDays} দিন practice হয়েছে</small></article><article><Trophy size={21} /><span>সঠিক উত্তরের গড়</span><strong>{average}%</strong><small>{allAttempts.length}টি practice থেকে</small></article></div><section className="guardian-guidance"><span><Lightbulb size={22} /></span><div><p className="eyebrow">আপনি এখন যা করতে পারেন</p><h2>{guidance}</h2>{latestFocus && <p>পরের focus: <strong>{latestFocus}</strong></p>}</div></section><section className="guardian-learners"><div className="guardian-section-heading"><div><p className="eyebrow">LEARNER PROGRESS</p><h2>প্রত্যেক শিশুর আলাদা অগ্রগতি</h2></div><span>School grade নয়—practice trend</span></div><div className="guardian-learner-grid">{profiles.map((profile) => { const profileAttempts = attemptsByProfile[profile.id] ?? []; const profileAverage = profileAttempts.length ? Math.round(profileAttempts.reduce((sum, attempt) => sum + attempt.score / attempt.total * 100, 0) / profileAttempts.length) : 0; const recent = profileAttempts[0]; return <article key={profile.id}><div className="guardian-profile-head"><span>{profile.avatar}</span><div><h3>{profile.name}</h3><p>Class {profile.classKey}</p></div><strong>{profileAverage}%</strong></div><div className="guardian-profile-bar"><span style={{ width: `${profileAverage}%` }} /></div><dl><div><dt>মোট practice</dt><dd>{profileAttempts.length}</dd></div><div><dt>শেষ ফল</dt><dd>{recent ? `${recent.score}/${recent.total}` : "—"}</dd></div><div><dt>আরও সাহায্য দরকার</dt><dd>{recent?.focusArea === "Revision Complete" ? "এখন জরুরি কিছু নেই" : recent?.focusArea ?? "প্রথম practice"}</dd></div></dl><button onClick={() => onOpenLearner(profile.id)}>{profile.name}-এর শেখার পাতা খুলুন <ArrowRight size={15} /></button></article>; })}</div></section><p className="guardian-note"><ShieldCheck size={17} /> TomarShikkha-এর practice result কোনো school exam result নয়। লক্ষ্য হলো শিশুর confidence ও নিয়মিত শেখা বাড়ানো।</p></div>;
+  return <div className="guardian-shell"><div className="guardian-top"><button className="back-link" onClick={onBack}><ArrowLeft size={18} /> শেখার পাতায় ফিরুন</button><div className={`guardian-cloud ${cloudStatus}`}><span>{cloudUserEmail ? "☁️" : "💻"}</span><div><strong>{cloudUserEmail ? "Cloud backup চালু আছে" : "এই device-এ save আছে"}</strong><small>{cloudUserEmail ?? "অন্য device-এ দেখতে পরে sign in করুন"}</small></div></div></div><section className="guardian-hero"><div><p className="eyebrow">GUARDIAN VIEW</p><h1>শিশুর শেখার সহজ চিত্র</h1><p>সহজ ভাষায় দেখুন—কোথায় ভালো করছে এবং এখন কীভাবে সাহায্য করবেন।</p></div><span className="guardian-hero-icon"><HeartHandshake size={30} /></span></section><div className="guardian-stats"><article><Users size={21} /><span>শিক্ষার্থী</span><strong>{profiles.length}</strong><small>আলাদা learning profile</small></article><article><CalendarDays size={21} /><span>গত ৭ দিন</span><strong>{weeklyAttempts.length}</strong><small>{practicedDays} দিন practice হয়েছে</small></article><article><Trophy size={21} /><span>সঠিক উত্তরের গড়</span><strong>{average}%</strong><small>{allAttempts.length}টি practice থেকে</small></article><article><Star size={21} /><span>Power Stars</span><strong>{powerStars}</strong><small>Practice ও Quest মিলিয়ে</small></article></div><section className="guardian-guidance"><span><Lightbulb size={22} /></span><div><p className="eyebrow">আপনি এখন যা করতে পারেন</p><h2>{guidance}</h2>{latestFocus && <p>পরের focus: <strong>{latestFocus}</strong></p>}</div></section><section className="guardian-learners"><div className="guardian-section-heading"><div><p className="eyebrow">LEARNER PROGRESS</p><h2>প্রত্যেক শিশুর আলাদা অগ্রগতি</h2></div><span>School grade নয়—practice trend</span></div><div className="guardian-learner-grid">{profiles.map((profile) => { const profileAttempts = attemptsByProfile[profile.id] ?? []; const profileAverage = profileAttempts.length ? Math.round(profileAttempts.reduce((sum, attempt) => sum + attempt.score / attempt.total * 100, 0) / profileAttempts.length) : 0; const recent = profileAttempts[0]; return <article key={profile.id}><div className="guardian-profile-head"><span>{profile.avatar}</span><div><h3>{profile.name}</h3><p>Class {profile.classKey}</p></div><strong>{profileAverage}%</strong></div><div className="guardian-profile-bar"><span style={{ width: `${profileAverage}%` }} /></div><dl><div><dt>মোট practice</dt><dd>{profileAttempts.length}</dd></div><div><dt>শেষ ফল</dt><dd>{recent ? `${recent.score}/${recent.total}` : "—"}</dd></div><div><dt>আরও সাহায্য দরকার</dt><dd>{recent?.focusArea === "Revision Complete" ? "এখন জরুরি কিছু নেই" : recent?.focusArea ?? "প্রথম practice"}</dd></div></dl><button onClick={() => onOpenLearner(profile.id)}>{profile.name}-এর শেখার পাতা খুলুন <ArrowRight size={15} /></button></article>; })}</div></section><p className="guardian-note"><ShieldCheck size={17} /> TomarShikkha-এর practice result কোনো school exam result নয়। লক্ষ্য হলো শিশুর confidence ও নিয়মিত শেখা বাড়ানো।</p></div>;
 }
 
 function ContentVerification({ onBack }: { onBack: () => void }) {

@@ -1,16 +1,17 @@
 import { scienceQuestions } from "../data/class-8-science.ts";
+import { class8ScienceMore } from "../data/class-8-science-expansion.ts";
 import { banglaQuestions, bgsQuestions, englishQuestions, mathQuestions } from "../data/class-8-main-subjects.ts";
 import { class7BanglaQuestions, class7BgsQuestions, class7EnglishQuestions, class7MathQuestions, class7ScienceQuestions } from "../data/class-7-main-subjects.ts";
 import { class6BanglaQuestions, class6BgsQuestions, class6EnglishQuestions, class6MathQuestions, class6ScienceQuestions } from "../data/class-6-main-subjects.ts";
 import { class5BanglaQuestions, class5BgsQuestions, class5EnglishQuestions, class5MathQuestions, class5ScienceQuestions } from "../data/class-5-main-subjects.ts";
-import { class5MathMore, class5ScienceMore, class6MathMore, class6ScienceMore, class7MathMore, class7ScienceMore } from "../data/expansion-questions.ts";
+import { class5MathDepth, class5MathMore, class5ScienceDepth, class5ScienceMore, class6MathDepth, class6MathMore, class6ScienceDepth, class6ScienceMore, class7MathDepth, class7MathMore, class7ScienceDepth, class7ScienceMore } from "../data/expansion-questions.ts";
 import { buildPracticeQuestions } from "../lib/quiz-engine.ts";
 
 const tracks = {
-  "Class 8 Science": scienceQuestions, "Class 8 Mathematics": mathQuestions, "Class 8 English": englishQuestions, "Class 8 Bangla": banglaQuestions, "Class 8 BGS": bgsQuestions,
-  "Class 7 Science": [...class7ScienceQuestions, ...class7ScienceMore], "Class 7 Mathematics": [...class7MathQuestions, ...class7MathMore], "Class 7 English": class7EnglishQuestions, "Class 7 Bangla": class7BanglaQuestions, "Class 7 BGS": class7BgsQuestions,
-  "Class 6 Science": [...class6ScienceQuestions, ...class6ScienceMore], "Class 6 Mathematics": [...class6MathQuestions, ...class6MathMore], "Class 6 English": class6EnglishQuestions, "Class 6 Bangla": class6BanglaQuestions, "Class 6 BGS": class6BgsQuestions,
-  "Class 5 Science": [...class5ScienceQuestions, ...class5ScienceMore], "Class 5 Mathematics": [...class5MathQuestions, ...class5MathMore], "Class 5 English": class5EnglishQuestions, "Class 5 Bangla": class5BanglaQuestions, "Class 5 BGS": class5BgsQuestions,
+  "Class 8 Science": [...scienceQuestions, ...class8ScienceMore], "Class 8 Mathematics": mathQuestions, "Class 8 English": englishQuestions, "Class 8 Bangla": banglaQuestions, "Class 8 BGS": bgsQuestions,
+  "Class 7 Science": [...class7ScienceQuestions, ...class7ScienceMore, ...class7ScienceDepth], "Class 7 Mathematics": [...class7MathQuestions, ...class7MathMore, ...class7MathDepth], "Class 7 English": class7EnglishQuestions, "Class 7 Bangla": class7BanglaQuestions, "Class 7 BGS": class7BgsQuestions,
+  "Class 6 Science": [...class6ScienceQuestions, ...class6ScienceMore, ...class6ScienceDepth], "Class 6 Mathematics": [...class6MathQuestions, ...class6MathMore, ...class6MathDepth], "Class 6 English": class6EnglishQuestions, "Class 6 Bangla": class6BanglaQuestions, "Class 6 BGS": class6BgsQuestions,
+  "Class 5 Science": [...class5ScienceQuestions, ...class5ScienceMore, ...class5ScienceDepth], "Class 5 Mathematics": [...class5MathQuestions, ...class5MathMore, ...class5MathDepth], "Class 5 English": class5EnglishQuestions, "Class 5 Bangla": class5BanglaQuestions, "Class 5 BGS": class5BgsQuestions,
 };
 
 const issues = [];
