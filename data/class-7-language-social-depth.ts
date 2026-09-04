@@ -1,0 +1,27 @@
+import type { ScienceQuestion as Q } from "./class-8-science";
+const sourceUrl="https://nctb.gov.bd/pages/static-pages/695b9aeec4774958d7b70908";
+const q=(id:string,prompt:string,options:string[],answer:number,explanation:string,topic:string,chapter:string,chapterNo:number,subject:string):Q=>({id,prompt,options,answer,explanation,topic,chapter,chapterNo,origin:`NCTB 2026 • Class 7 ${subject} • ${chapter}`,sourceUrl});
+
+export const class7EnglishDepth:Q[]=[
+q("e7d-4-01","Complete: If it rains, we ___ indoors.",["stay","stayed yesterday","will stay","staying"],2,"This is a possible future condition: if + simple present, then will + base verb.","First conditional","Grammar and meaning",4,"English"),
+q("e7d-4-03","Choose the correct sentence.",["She has finished her homework.","She have finish her homework.","She has finish her homework.","She finishing her homework."],0,"Present perfect uses has with a singular subject and the past participle finished.","Present perfect","Grammar and meaning",4,"English"),
+q("e7d-4-05","Which sentence is passive?",["The team planted the trees.","The trees were planted by the team.","The team is planting trees.","The trees grow quickly."],1,"Were planted is formed with be + past participle, so the receiver of the action is the subject.","Passive voice","Grammar and meaning",4,"English"),
+q("e7d-5-01","What does ‘responsible’ mean?",["Careless about duties","Willing to do duties properly","Unable to decide","Always late"],1,"A responsible person understands a duty and tries to complete it properly.","Vocabulary","Reading critically",5,"English"),
+q("e7d-5-03","Read: ‘Although the task was difficult, Toma did not give up.’ What quality did Toma show?",["Patience and determination","Carelessness","Fear","Dishonesty"],0,"Not giving up despite difficulty shows determination and patience.","Inference","Reading critically",5,"English"),
+q("e7d-5-05","Which is the best supporting detail for ‘Trees help our environment’ ?",["Trees absorb carbon dioxide and give oxygen.","My bag is heavy.","Friday is a holiday.","The room has a clock."],0,"The first sentence directly explains one way trees benefit the environment.","Supporting detail","Reading critically",5,"English")];
+
+export const class7BanglaDepth:Q[]=[
+q("b7d-4-01","‘শিক্ষার্থীরা মনোযোগ দিয়ে শুনছে’—‘মনোযোগ দিয়ে’ কোন ধরনের পদগুচ্ছ?",["বিশেষ্যসুলভ","ক্রিয়াবিশেষণসুলভ","সর্বনামসুলভ","অনুসর্গসুলভ"],1,"শব্দগুচ্ছটি কীভাবে শুনছে তা বোঝায়, তাই এটি ক্রিয়াবিশেষণসুলভ।","পদগুচ্ছ","ভাষা ও ব্যাকরণ প্রয়োগ",4,"Bangla"),
+q("b7d-4-03","‘বৃষ্টি হলে আমরা ঘরে থাকব’—এটি কোন ধরনের বাক্য?",["সরল","জটিল","যৌগিক","অসম্পূর্ণ"],1,"এখানে একটি প্রধান খণ্ডবাক্য এবং ‘বৃষ্টি হলে’ আশ্রিত খণ্ডবাক্য আছে, তাই এটি জটিল বাক্য।","জটিল বাক্য","ভাষা ও ব্যাকরণ প্রয়োগ",4,"Bangla"),
+q("b7d-4-05","‘সে বইটি বন্ধুকে দিল’—‘বন্ধুকে’ কোন কারক?",["কর্তৃকারক","কর্মকারক","সম্প্রদান কারক","অপাদান কারক"],2,"যাকে কিছু দেওয়া হয়, সে সম্প্রদান কারক; এখানে বইটি বন্ধুকে দেওয়া হয়েছে।","সম্প্রদান কারক","ভাষা ও ব্যাকরণ প্রয়োগ",4,"Bangla"),
+q("b7d-5-01","‘অকৃত্রিম’ শব্দের অর্থ কী?",["কৃত্রিম","খাঁটি বা স্বাভাবিক","অসম্পূর্ণ","অজানা"],1,"অকৃত্রিম অর্থ কৃত্রিম নয়—খাঁটি, সহজ বা স্বাভাবিক।","শব্দার্থ","শব্দ ও প্রকাশ",5,"Bangla"),
+q("b7d-5-03","‘যা সহজে নষ্ট হয় না’—এক কথায় কী?",["ভঙ্গুর","টেকসই","ক্ষণস্থায়ী","দুর্বোধ্য"],1,"যে বস্তু দীর্ঘদিন ব্যবহারযোগ্য থাকে এবং সহজে নষ্ট হয় না, সেটি টেকসই।","এক কথায় প্রকাশ","শব্দ ও প্রকাশ",5,"Bangla"),
+q("b7d-5-05","‘গাছে কাঁঠাল, গোঁফে তেল’ প্রবাদটি কী বোঝায়?",["আগেই নিশ্চিত সাফল্য ধরে নেওয়া","গাছের যত্ন নেওয়া","পরিশ্রম করা","ফল ভাগ করা"],0,"ফল পাওয়ার আগেই তা নিশ্চিত ধরে আনন্দ বা আয়োজন করাকে এই প্রবাদ দিয়ে বোঝানো হয়।","প্রবাদ","শব্দ ও প্রকাশ",5,"Bangla")];
+
+export const class7BgsDepth:Q[]=[
+q("g7d-4-01","গণতন্ত্রে নাগরিকের গুরুত্বপূর্ণ ভূমিকা কোনটি?",["সচেতনভাবে মত দেওয়া ও আইন মানা","গুজব ছড়ানো","অন্যের অধিকার অস্বীকার","সরকারি সম্পদ নষ্ট করা"],0,"সচেতন অংশগ্রহণ, আইন মানা এবং অন্যের অধিকার সম্মান করা গণতান্ত্রিক নাগরিকত্বের অংশ।","গণতান্ত্রিক অংশগ্রহণ","নাগরিকতা ও রাষ্ট্র",4,"BGS"),
+q("g7d-4-03","সংবিধান নাগরিকের জন্য কেন গুরুত্বপূর্ণ?",["শুধু উৎসবের তালিকা দেয়","অধিকার ও রাষ্ট্রের মূল কাঠামো নির্ধারণ করে","শুধু মানচিত্র দেখায়","ব্যক্তিগত diary হিসেবে কাজ করে"],1,"সংবিধান রাষ্ট্র পরিচালনার নিয়ম, প্রতিষ্ঠান এবং নাগরিকের মৌলিক অধিকার ও দায়িত্বের ভিত্তি দেয়।","সংবিধান","নাগরিকতা ও রাষ্ট্র",4,"BGS"),
+q("g7d-4-05","বিদ্যালয়ে প্রতিনিধি নির্বাচনের সুষ্ঠু উপায় কোনটি?",["ভয় দেখানো","গোপন ও স্বাধীন ভোট","একজন নিজেই সিদ্ধান্ত নেওয়া","ভোট কিনে নেওয়া"],1,"স্বাধীনভাবে মত প্রকাশ ও গোপন ভোট শিক্ষার্থীদের গণতান্ত্রিক চর্চা শেখায়।","নির্বাচন","নাগরিকতা ও রাষ্ট্র",4,"BGS"),
+q("g7d-5-01","নদীভাঙনে ক্ষতিগ্রস্ত মানুষের সহায়তায় প্রথম প্রয়োজন কোনটি?",["নিরাপদ আশ্রয় ও জরুরি সহায়তা","গুজব","অপ্রয়োজনীয় ভ্রমণ","ঝুঁকিপূর্ণ স্থানে থাকা"],0,"দুর্যোগের পর নিরাপদ আশ্রয়, বিশুদ্ধ পানি, খাবার ও চিকিৎসা সবচেয়ে জরুরি।","নদীভাঙন","মানুষ, সম্পদ ও দুর্যোগ",5,"BGS"),
+q("g7d-5-03","প্রাকৃতিক সম্পদ টেকসইভাবে ব্যবহার বলতে কী বোঝায়?",["সব দ্রুত শেষ করা","বর্তমান প্রয়োজন মিটিয়ে ভবিষ্যতের জন্যও রক্ষা করা","ব্যবহার না করে ফেলে রাখা","শুধু আমদানি করা"],1,"টেকসই ব্যবহার বর্তমানের প্রয়োজন পূরণ করে, কিন্তু ভবিষ্যৎ প্রজন্মের সুযোগ নষ্ট করে না।","টেকসই সম্পদ ব্যবহার","মানুষ, সম্পদ ও দুর্যোগ",5,"BGS"),
+q("g7d-5-05","Online news বিশ্বাস করার আগে কী করা উচিত?",["শিরোনাম দেখেই share","বিশ্বস্ত একাধিক source-এ যাচাই","বন্ধুর comment-ই যথেষ্ট","ছবি দেখলেই সত্য ধরা"],1,"Source, প্রকাশের সময় ও অন্য নির্ভরযোগ্য প্রতিবেদনের সঙ্গে মিলিয়ে দেখলে misinformation কম ছড়ায়।","তথ্য যাচাই","মানুষ, সম্পদ ও দুর্যোগ",5,"BGS")];

@@ -37,11 +37,11 @@ const isQuestionValid = (question: ScienceQuestion) => {
   );
 };
 
-export function auditCurriculum<TClass extends string, TSubject extends string>(catalog: Record<TClass, Record<TSubject, { label: string; questions: ScienceQuestion[] }>>): ContentAudit {
+export function auditCurriculum<TClass extends string, TSubject extends string>(catalog: Record<TClass, Partial<Record<TSubject, { label: string; questions: ScienceQuestion[] }>>>): ContentAudit {
   const subjects: AuditSubject[] = [];
-  const classGroups = Object.entries(catalog) as [string, Record<TSubject, { label: string; questions: ScienceQuestion[] }>][];
+  const classGroups = Object.entries(catalog) as [string, Partial<Record<TSubject, { label: string; questions: ScienceQuestion[] }>>][];
   for (const [classKey, classSubjects] of classGroups) {
-    for (const subject of Object.values(classSubjects) as { label: string; questions: ScienceQuestion[] }[]) {
+    for (const subject of Object.values(classSubjects).filter((entry): entry is { label: string; questions: ScienceQuestion[] } => Boolean(entry))) {
       const valid = subject.questions.filter(isQuestionValid).length;
       const sourced = subject.questions.filter((question) => /^https:\/\//.test(question.sourceUrl)).length;
       subjects.push({
