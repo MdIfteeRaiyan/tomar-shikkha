@@ -1,0 +1,11 @@
+{
+  "name": "TomarShikkha",
+  "short_name": "TomarShikkha",
+  "description": "NCTB curriculum-based smart practice for Classes 5–10.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7fbfb",
+  "theme_color": "#087f8c",
+  "lang": "bn",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

@@ -1,4 +1,27 @@
-# vinext-starter
+# TomarShikkha
+
+NCTB curriculum-grounded learning platform for Classes 5–10, created by Md. Iftee Raiyan (EWU, CSE).
+
+## Supabase setup
+
+1. Run the complete `supabase/schema.sql` in Supabase Dashboard → SQL Editor. It is safe to run again when upgrading an older TomarShikkha database.
+2. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in Vercel.
+3. Sign in to TomarShikkha once with the owner email.
+4. In Supabase SQL Editor, approve that signed-in account as admin:
+
+```sql
+insert into public.ts_admin_users (user_id)
+select id from auth.users where email = 'your-owner-email@example.com'
+on conflict (user_id) do nothing;
+```
+
+Replace the placeholder with the exact owner email used for TomarShikkha sign-in. The Owner Desk is hidden unless Supabase confirms the signed-in user is in `ts_admin_users`. Student question reports remain on-device for guests and sync to the protected cloud queue after guardian sign-in.
+
+Cloud backup covers learner profiles, practice attempts, Daily Quest completion, Power Stars, virtual reward redemptions, question reports, and signed-in guardian feedback. The site also installs a small offline cache; after one successful online visit, local practice can continue during a connection drop and cloud changes resume when the connection returns.
+
+See `DEPLOYMENT.md` for the exact Vercel update and verification checklist.
+
+# Vinext project notes
 
 A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
 

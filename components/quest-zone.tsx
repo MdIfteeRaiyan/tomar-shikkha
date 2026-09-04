@@ -19,7 +19,7 @@ const seniorQuests: Quest[] = [
   { title: "60-Second Challenge", type: "Math mission", prompt: "15 × 4 − 10 = ?", options: ["40", "50", "60", "70"], answer: 1, explanation: "আগে গুণ: 15 × 4 = 60, এরপর 60 − 10 = 50।", stars: 10 },
 ];
 
-export function QuestZone({ classKey, profileId, powerStars, onBack, onEarn }: { classKey: "5" | "6" | "7" | "8" | "9" | "10"; profileId: string; powerStars: number; onBack: () => void; onEarn: (stars: number) => void }) {
+export function QuestZone({ classKey, profileId, powerStars, cloudCompleted = [], onBack, onEarn }: { classKey: "5" | "6" | "7" | "8" | "9" | "10"; profileId: string; powerStars: number; cloudCompleted?: number[]; onBack: () => void; onEarn: (stars: number, questIndex: number, questDate: string) => void }) {
   const quests = classKey === "5" || classKey === "6" ? juniorQuests : seniorQuests;
   const today = new Date().toLocaleDateString("en-CA");
   const completionKey = `tomar-shikkha-quest-complete-v2:${profileId}:${today}`;
@@ -27,11 +27,12 @@ export function QuestZone({ classKey, profileId, powerStars, onBack, onEarn }: {
   const [choice, setChoice] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [achievementOpen, setAchievementOpen] = useState(false);
-  const [completed, setCompleted] = useState<number[]>(() => {
+  const [deviceCompleted, setDeviceCompleted] = useState<number[]>(() => {
     if (typeof window === "undefined") return [];
     try { return JSON.parse(window.localStorage.getItem(completionKey) ?? "[]"); }
     catch { return []; }
   });
+  const completed = useMemo(() => [...new Set([...deviceCompleted, ...cloudCompleted])].sort((a, b) => a - b), [deviceCompleted, cloudCompleted]);
   const quest = quests[questIndex];
   const correct = choice === quest.answer;
   const progress = useMemo(() => Math.round((completed.length / quests.length) * 100), [completed.length, quests.length]);
@@ -41,13 +42,13 @@ export function QuestZone({ classKey, profileId, powerStars, onBack, onEarn }: {
     if (choice === null || revealed) return;
     setRevealed(true);
     if (choice === quest.answer && !completed.includes(questIndex)) {
-      setCompleted((items) => {
+      setDeviceCompleted((items) => {
         const next = [...items, questIndex];
         window.localStorage.setItem(completionKey, JSON.stringify(next));
         if (next.length === quests.length) window.setTimeout(() => setAchievementOpen(true), 350);
         return next;
       });
-      onEarn(quest.stars);
+      onEarn(quest.stars, questIndex, today);
     }
   };
   const next = () => { const nextOpen = quests.findIndex((_, index) => !completed.includes(index)); setQuestIndex(nextOpen >= 0 ? nextOpen : (questIndex + 1) % quests.length); setChoice(null); setRevealed(false); };
