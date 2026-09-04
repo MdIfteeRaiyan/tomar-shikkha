@@ -8,16 +8,18 @@
   "scripts": {
     "install:ci": "npm ci",
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run content:verify && next build",
     "start": "next start",
-    "test": "npm run build && node --test tests/*.test.mjs",
+    "test": "npm run lint && npm run build",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "content:verify": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/verify-content.mjs",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
     "@hookform/resolvers": "^5.7.1",
     "@shadcn/react": "^0.3.0",
+    "@supabase/supabase-js": "^2.115.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "^1.1.1",
