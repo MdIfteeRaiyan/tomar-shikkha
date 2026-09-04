@@ -17,10 +17,10 @@ import { class5MathMore, class5ScienceMore, class6MathMore, class6ScienceMore, c
 import { isCloudConfigured, supabase } from "@/lib/supabase";
 import { auditCurriculum } from "@/lib/content-audit";
 import { CuriosityPop } from "@/components/curiosity-pop";
+import { buildPracticeQuestions, getDifficulty, shuffleQuestions as shuffled, type Difficulty } from "@/lib/quiz-engine";
 
 type PracticeAttempt = { id: number; subject: string; chapter: string; score: number; total: number; focusArea: string; createdAt: number };
 type RewardRedemption = { id: number; rewardId: string; cost: number; createdAt: number };
-type Difficulty = "easy" | "medium" | "hard";
 type SubjectKey = "science" | "math" | "english" | "bangla" | "bgs";
 type ClassKey = "5" | "6" | "7" | "8";
 const ATTEMPTS_STORAGE_KEY = "tomar-shikkha-attempts-v1";
@@ -48,11 +48,6 @@ const curriculumCatalog: Record<ClassKey, Record<SubjectKey, { label: string; qu
   "8": {
     science: { label: "Science", questions: scienceQuestions }, math: { label: "Mathematics", questions: mathQuestions }, english: { label: "English", questions: englishQuestions }, bangla: { label: "Bangla", questions: banglaQuestions }, bgs: { label: "Bangladesh & Global Studies", questions: bgsQuestions },
   },
-};
-const shuffled = <T,>(items: T[]) => [...items].sort(() => Math.random() - 0.5);
-const getDifficulty = (question: ScienceQuestion): Difficulty => {
-  const sequence = Number(question.id.slice(-2));
-  return sequence <= 2 ? "easy" : sequence <= 4 ? "medium" : "hard";
 };
 const difficultyCopy: Record<Difficulty, { label: string; hint: string }> = {
   easy: { label: "Easy", hint: "Recall & basics" },
@@ -240,8 +235,7 @@ export default function Home() {
   const startQuiz = () => {
     const subjectQuestions = curriculumCatalog[selectedClass][selectedSubject].questions;
     const chapterPool = selectedChapter === "all" ? subjectQuestions : subjectQuestions.filter((q) => String(q.chapterNo) === selectedChapter);
-    const pool = chapterPool.filter((q) => getDifficulty(q) === difficulty);
-    const nextQuestions = shuffled(pool).slice(0, Math.min(Number(questionCount), pool.length));
+    const nextQuestions = buildPracticeQuestions(chapterPool, Number(questionCount), difficulty);
     setPracticeMode("standard"); setQuizQuestions(nextQuestions); setAnswers(Array(nextQuestions.length).fill(null)); setCurrent(0); setRevealed(false); setSaveState("idle"); setScreen("quiz");
   };
   const startFocusedPractice = () => {
@@ -300,7 +294,9 @@ function SetupScreen({ onStart, onSmartMission, onBreak, onContentCheck, attempt
   const catalog = curriculumCatalog[selectedClass][selectedSubject];
   const chapters = [{ value: "all", label: "সব অধ্যায়", count: catalog.questions.length }, ...Array.from(new Map(catalog.questions.map((question) => [question.chapterNo, question])).values()).sort((a, b) => a.chapterNo - b.chapterNo).map((question) => ({ value: String(question.chapterNo), label: question.chapter, count: catalog.questions.filter((item) => item.chapterNo === question.chapterNo).length }))];
   const chapterPool = selectedChapter === "all" ? catalog.questions : catalog.questions.filter((q) => String(q.chapterNo) === selectedChapter);
-  const activeCount = chapterPool.filter((q) => getDifficulty(q) === difficulty).length;
+  const availableCount = chapterPool.length;
+  const preferredCount = chapterPool.filter((q) => getDifficulty(q) === difficulty).length;
+  const actualQuestionCount = Math.min(Number(questionCount), availableCount);
   const latestAccuracy = attempts[0] ? Math.round((attempts[0].score / attempts[0].total) * 100) : 0;
   const recentAverage = attempts.length ? Math.round(attempts.reduce((sum, attempt) => sum + (attempt.score / attempt.total) * 100, 0) / attempts.length) : 0;
   const practiceRhythm = Math.min(attempts.length * 20, 100);
@@ -327,13 +323,13 @@ function SetupScreen({ onStart, onSmartMission, onBreak, onContentCheck, attempt
         <Heading icon={<BrainCircuit size={22} />} eyebrow="SMART PRACTICE" title="Choose your next challenge" tone="teal" />
         <div className="class-switch-wrap"><label className="field-label">Choose your class</label><div className="class-switch" role="group" aria-label="Choose class">{(["5", "6", "7", "8"] as ClassKey[]).map((item) => <button key={item} type="button" className={selectedClass === item ? "active" : ""} onClick={() => setSelectedClass(item)} aria-pressed={selectedClass === item}><span>Class</span><strong>{item}</strong>{selectedClass === item && <Star size={14} fill="currentColor" />}</button>)}</div></div>
         <div className="form-grid">
-          <Field label="Subject"><Choice value={selectedSubject} onValueChange={(value) => setSelectedSubject(value as SubjectKey)} options={Object.keys(curriculumCatalog[selectedClass])} labels={Object.values(curriculumCatalog[selectedClass]).map((subject) => subject.label)} /></Field>
-          <Field label="Chapter"><Choice value={selectedChapter} onValueChange={setSelectedChapter} options={chapters.map((c) => c.value)} labels={chapters.map((c) => `${c.label} (${c.count})`)} /></Field>
-          <Field label="Questions"><Choice value={questionCount} onValueChange={setQuestionCount} options={["5", "10", "15", "20", "25", "30", "40", "50", "70"]} suffix=" questions" /></Field>
+          <Field label="Subject"><Choice ariaLabel="Subject" value={selectedSubject} onValueChange={(value) => setSelectedSubject(value as SubjectKey)} options={Object.keys(curriculumCatalog[selectedClass])} labels={Object.values(curriculumCatalog[selectedClass]).map((subject) => subject.label)} /></Field>
+          <Field label="Chapter"><Choice ariaLabel="Chapter" value={selectedChapter} onValueChange={setSelectedChapter} options={chapters.map((c) => c.value)} labels={chapters.map((c) => `${c.label} (${c.count})`)} /></Field>
+          <Field label="Questions"><Choice ariaLabel="Number of questions" value={questionCount} onValueChange={setQuestionCount} options={["5", "10", "15", "20", "25", "30", "40", "50", "70"]} suffix=" questions" /></Field>
         </div>
-        <div className="coverage-note" key={`${selectedClass}-${selectedSubject}-${difficulty}`}><BookMarked size={18} /><div><strong>Great choice—তোমার practice ready!</strong><span>{activeCount}টি {difficultyCopy[difficulty].label} question আছে • NCTB 2026 Class {selectedClass} {catalog.label}</span></div></div>
-        <div className="challenge-block"><label className="field-label">Challenge Level</label><div className="challenge-row">{(["easy", "medium", "hard"] as Difficulty[]).map((level) => <button type="button" key={level} className={difficulty === level ? "selected" : ""} onClick={() => setDifficulty(level)} aria-pressed={difficulty === level}><span>{difficultyCopy[level].label}</span><small>{difficultyCopy[level].hint}</small></button>)}</div></div>
-        <Button onClick={onStart} size="lg" className="start-button">Start {Math.min(Number(questionCount), activeCount)}-Question Practice <ArrowRight /></Button>
+        <div className="coverage-note" key={`${selectedClass}-${selectedSubject}-${selectedChapter}-${difficulty}-${questionCount}`}><BookMarked size={18} /><div><strong>{actualQuestionCount}টি question নিয়ে practice ready!</strong><span>{difficultyCopy[difficulty].label} questions আগে আসবে ({preferredCount}টি available), তারপর অন্য level থেকে practice পূর্ণ হবে • মোট available {availableCount}টি</span></div></div>
+        <div className="challenge-block"><label className="field-label">Start with this level</label><div className="challenge-row">{(["easy", "medium", "hard"] as Difficulty[]).map((level) => <button type="button" key={level} className={difficulty === level ? "selected" : ""} onClick={() => setDifficulty(level)} aria-pressed={difficulty === level}><span>{difficultyCopy[level].label}</span><small>{difficultyCopy[level].hint}</small></button>)}</div></div>
+        <Button onClick={onStart} size="lg" className="start-button" disabled={availableCount === 0}>Start {actualQuestionCount}-Question Practice <ArrowRight /></Button>
         <p className="demo-note">Questions are shuffled in every attempt</p>
       </section>
       <aside className="side-column">
@@ -392,4 +388,4 @@ function AccountMenu({ attempts, selectedClass, powerStars, profiles, activeProf
 function Heading({ icon, eyebrow, title, tone, compact = false }: { icon: React.ReactNode; eyebrow: string; title: string; tone: string; compact?: boolean }) { return <div className={`section-heading ${compact ? "compact" : ""}`}><span className={`icon-tile ${tone}`}>{icon}</span><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2></div></div>; }
 function ResultCard({ icon, eyebrow, title, tone, attention, children }: { icon: React.ReactNode; eyebrow: string; title: string; tone: string; attention?: boolean; children: React.ReactNode }) { return <section className={`result-card ${attention ? "attention" : ""}`}><span className={`icon-tile ${tone}`}>{icon}</span><p className="eyebrow">{eyebrow}</p><h2>{title}</h2><p>{children}</p></section>; }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <div><label className="field-label">{label}</label>{children}</div>; }
-function Choice({ value, onValueChange, options, labels, prefix = "", suffix = "" }: { value: string; onValueChange: (value: string) => void; options: string[]; labels?: string[]; prefix?: string; suffix?: string }) { return <Select value={value} onValueChange={onValueChange}><SelectTrigger className="choice-trigger"><SelectValue /></SelectTrigger><SelectContent>{options.map((option, index) => <SelectItem key={option} value={option}>{prefix}{labels?.[index] ?? option}{suffix}</SelectItem>)}</SelectContent></Select>; }
+function Choice({ ariaLabel, value, onValueChange, options, labels, prefix = "", suffix = "" }: { ariaLabel: string; value: string; onValueChange: (value: string) => void; options: string[]; labels?: string[]; prefix?: string; suffix?: string }) { return <Select value={value} onValueChange={onValueChange}><SelectTrigger className="choice-trigger" aria-label={ariaLabel}><SelectValue /></SelectTrigger><SelectContent>{options.map((option, index) => <SelectItem key={option} value={option}>{prefix}{labels?.[index] ?? option}{suffix}</SelectItem>)}</SelectContent></Select>; }

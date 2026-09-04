@@ -4,6 +4,7 @@ import { class7BanglaQuestions, class7BgsQuestions, class7EnglishQuestions, clas
 import { class6BanglaQuestions, class6BgsQuestions, class6EnglishQuestions, class6MathQuestions, class6ScienceQuestions } from "../data/class-6-main-subjects.ts";
 import { class5BanglaQuestions, class5BgsQuestions, class5EnglishQuestions, class5MathQuestions, class5ScienceQuestions } from "../data/class-5-main-subjects.ts";
 import { class5MathMore, class5ScienceMore, class6MathMore, class6ScienceMore, class7MathMore, class7ScienceMore } from "../data/expansion-questions.ts";
+import { buildPracticeQuestions } from "../lib/quiz-engine.ts";
 
 const tracks = {
   "Class 8 Science": scienceQuestions, "Class 8 Mathematics": mathQuestions, "Class 8 English": englishQuestions, "Class 8 Bangla": banglaQuestions, "Class 8 BGS": bgsQuestions,
@@ -29,6 +30,14 @@ for (const [track, questions] of Object.entries(tracks)) {
     ids.add(question.id); prompts.add(prompt);
   }
   if (Object.values(levels).some((count) => count === 0)) issues.push(`${track}: a challenge level has no questions`);
+  for (const level of ["easy", "medium", "hard"]) {
+    for (const requested of [5, 10, 15, 20, 25, 30, 40, 50, 70]) {
+      const practice = buildPracticeQuestions(questions, requested, level, () => 0.42);
+      const expected = Math.min(requested, questions.length);
+      if (practice.length !== expected) issues.push(`${track}: requested ${requested} ${level}, received ${practice.length} instead of ${expected}`);
+      if (new Set(practice.map((question) => question.id)).size !== practice.length) issues.push(`${track}: duplicate question in ${requested}-question ${level} practice`);
+    }
+  }
 }
 
 const total = Object.values(tracks).reduce((sum, questions) => sum + questions.length, 0);
