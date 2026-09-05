@@ -8,6 +8,8 @@ export type AuditSubject = {
   issues: number;
   chapters: number;
   sourceCoverage: number;
+  authored: number;
+  practiceVariants: number;
 };
 
 export type ContentAudit = {
@@ -52,6 +54,8 @@ export function auditCurriculum<TClass extends string, TSubject extends string>(
         issues: subject.questions.length - valid,
         chapters: new Set(subject.questions.map((question) => question.chapterNo)).size,
         sourceCoverage: subject.questions.length ? Math.round((sourced / subject.questions.length) * 100) : 0,
+        authored: subject.questions.filter((question) => !question.practiceVariantOf).length,
+        practiceVariants: subject.questions.filter((question) => Boolean(question.practiceVariantOf)).length,
       });
     }
   }

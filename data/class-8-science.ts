@@ -9,6 +9,10 @@ export type ScienceQuestion = {
   chapterNo: number;
   origin: string;
   sourceUrl: string;
+  difficulty?: "easy" | "medium" | "hard";
+  cognitiveLevel?: "recall" | "understanding" | "application" | "analysis";
+  boardStyle?: "concept" | "application" | "stimulus" | "multi-step" | "inference";
+  practiceVariantOf?: string;
 };
 
 const sourceUrl = "https://nctb.gov.bd/pages/static-pages/695b9858c4774958d7b703d8";
