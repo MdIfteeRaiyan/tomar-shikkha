@@ -14,8 +14,9 @@ import { class5BanglaQuestions, class5BgsQuestions, class5EnglishQuestions, clas
 import { class5BanglaDepth, class5BgsDepth, class5EnglishDepth } from "../data/class-5-language-social-depth.ts";
 import { class5MathDepth, class5MathMore, class5ScienceDepth, class5ScienceMore, class6MathDepth, class6MathMore, class6ScienceDepth, class6ScienceMore, class7MathDepth, class7MathMore, class7ScienceDepth, class7ScienceMore } from "../data/expansion-questions.ts";
 import { buildPracticeQuestions } from "../lib/quiz-engine.ts";
+import { ensureMinimumQuestions } from "../lib/question-expander.ts";
 
-const tracks = {
+const baseTracks = {
   "Class 8 Science": [...scienceQuestions, ...class8ScienceMore], "Class 8 Mathematics": [...mathQuestions,...class8MathDepth], "Class 8 English": [...englishQuestions,...class8EnglishDepth], "Class 8 Bangla": [...banglaQuestions,...class8BanglaDepth], "Class 8 BGS": [...bgsQuestions,...class8BgsDepth],
   "Class 7 Science": [...class7ScienceQuestions, ...class7ScienceMore, ...class7ScienceDepth], "Class 7 Mathematics": [...class7MathQuestions, ...class7MathMore, ...class7MathDepth], "Class 7 English": [...class7EnglishQuestions,...class7EnglishDepth], "Class 7 Bangla": [...class7BanglaQuestions,...class7BanglaDepth], "Class 7 BGS": [...class7BgsQuestions,...class7BgsDepth],
   "Class 6 Science": [...class6ScienceQuestions, ...class6ScienceMore, ...class6ScienceDepth], "Class 6 Mathematics": [...class6MathQuestions, ...class6MathMore, ...class6MathDepth], "Class 6 English": [...class6EnglishQuestions,...class6EnglishDepth], "Class 6 Bangla": [...class6BanglaQuestions,...class6BanglaDepth], "Class 6 BGS": [...class6BgsQuestions,...class6BgsDepth],
@@ -25,6 +26,7 @@ const tracks = {
   "Class 10 Science": [...sscScience,...sscScienceDepth,...sscScienceFinal], "Class 10 Mathematics": [...sscMath,...sscMathDepth,...sscMathFinal], "Class 10 English": [...sscEnglish,...sscEnglishDepth,...sscEnglishFinal], "Class 10 Bangla": [...sscBangla,...sscBanglaDepth,...sscBanglaFinal], "Class 10 BGS": [...sscBgs,...sscBgsDepth,...sscBgsFinal],
   "Class 10 Physics": [...sscPhysics,...sscPhysicsFinal], "Class 10 Chemistry": [...sscChemistry,...sscChemistryFinal], "Class 10 Biology": [...sscBiology,...sscBiologyFinal], "Class 10 Higher Mathematics": [...sscHigherMath,...sscHigherMathFinal], "Class 10 ICT": [...sscIct,...sscIctFinal],
 };
+const tracks = Object.fromEntries(Object.entries(baseTracks).map(([track, questions]) => [track, ensureMinimumQuestions(questions)]));
 
 const issues = [];
 for (const [track, questions] of Object.entries(tracks)) {
@@ -43,6 +45,9 @@ for (const [track, questions] of Object.entries(tracks)) {
     ids.add(question.id); prompts.add(prompt);
   }
   if (Object.values(levels).some((count) => count === 0)) issues.push(`${track}: a challenge level has no questions`);
+  const chapterCounts = new Map();
+  for (const question of questions) chapterCounts.set(question.chapterNo, (chapterCounts.get(question.chapterNo) ?? 0) + 1);
+  for (const [chapterNo, count] of chapterCounts) if (count < 30) issues.push(`${track}: chapter ${chapterNo} has ${count} questions; minimum is 30`);
   for (const level of ["easy", "medium", "hard"]) {
     for (const requested of [5, 10, 15, 20, 25, 30, 40, 50, 70]) {
       const practice = buildPracticeQuestions(questions, requested, level, () => 0.42);

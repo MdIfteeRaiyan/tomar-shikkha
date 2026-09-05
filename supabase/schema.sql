@@ -47,6 +47,39 @@ create table if not exists public.ts_daily_quest_completions (
   foreign key (user_id, profile_id) references public.ts_learner_profiles(user_id, id) on delete cascade
 );
 
+create table if not exists public.ts_seen_question_sets (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  profile_id text not null,
+  class_key text not null check (class_key in ('5', '6', '7', '8', '9', '10')),
+  subject_key text not null,
+  question_ids text[] not null default '{}',
+  updated_at timestamptz not null default now(),
+  primary key (user_id, profile_id, class_key, subject_key),
+  foreign key (user_id, profile_id) references public.ts_learner_profiles(user_id, id) on delete cascade
+);
+
+create table if not exists public.ts_login_streaks (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  profile_id text not null,
+  last_login_date date not null,
+  streak_count integer not null default 1 check (streak_count between 1 and 10000),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, profile_id),
+  foreign key (user_id, profile_id) references public.ts_learner_profiles(user_id, id) on delete cascade
+);
+
+create table if not exists public.ts_study_routines (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  profile_id text not null,
+  days_per_week integer not null check (days_per_week in (3, 5, 7)),
+  minutes_per_day integer not null check (minutes_per_day in (20, 30, 45)),
+  reminder_enabled boolean not null default true,
+  reminder_time time not null default '19:00',
+  updated_at timestamptz not null default now(),
+  primary key (user_id, profile_id),
+  foreign key (user_id, profile_id) references public.ts_learner_profiles(user_id, id) on delete cascade
+);
+
 create table if not exists public.ts_admin_users (
   user_id uuid primary key references auth.users(id) on delete cascade,
   created_at timestamptz not null default now()
@@ -85,6 +118,9 @@ alter table public.ts_learner_profiles enable row level security;
 alter table public.ts_practice_attempts enable row level security;
 alter table public.ts_reward_redemptions enable row level security;
 alter table public.ts_daily_quest_completions enable row level security;
+alter table public.ts_seen_question_sets enable row level security;
+alter table public.ts_login_streaks enable row level security;
+alter table public.ts_study_routines enable row level security;
 alter table public.ts_admin_users enable row level security;
 alter table public.ts_question_reports enable row level security;
 alter table public.ts_site_feedback enable row level security;
@@ -110,6 +146,24 @@ with check ((select auth.uid()) = user_id);
 drop policy if exists "Guardians manage own daily quests" on public.ts_daily_quest_completions;
 create policy "Guardians manage own daily quests"
 on public.ts_daily_quest_completions for all
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+drop policy if exists "Guardians manage own seen questions" on public.ts_seen_question_sets;
+create policy "Guardians manage own seen questions"
+on public.ts_seen_question_sets for all
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+drop policy if exists "Guardians manage own login streaks" on public.ts_login_streaks;
+create policy "Guardians manage own login streaks"
+on public.ts_login_streaks for all
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+drop policy if exists "Guardians manage own study routines" on public.ts_study_routines;
+create policy "Guardians manage own study routines"
+on public.ts_study_routines for all
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
@@ -159,11 +213,43 @@ on public.ts_reward_redemptions (user_id, profile_id, created_at desc);
 create index if not exists ts_daily_quests_profile_date_idx
 on public.ts_daily_quest_completions (user_id, profile_id, quest_date desc);
 
+create index if not exists ts_seen_questions_profile_idx
+on public.ts_seen_question_sets (user_id, profile_id, class_key, subject_key);
+
 create index if not exists ts_question_reports_status_date_idx
 on public.ts_question_reports (status, created_at desc);
 
 create index if not exists ts_site_feedback_status_date_idx
 on public.ts_site_feedback (status, created_at desc);
+
+-- Privacy-safe aggregate metrics for the Owner Desk. No names, emails,
+-- answers or individual learner rows are returned to the browser.
+create or replace function public.ts_admin_overview()
+returns table (
+  total_guardians bigint,
+  total_learners bigint,
+  total_practices bigint,
+  active_learners_7d bigint,
+  practices_7d bigint,
+  average_score_7d numeric
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    count(distinct profiles.user_id)::bigint,
+    count(distinct (profiles.user_id, profiles.id))::bigint,
+    (select count(*) from public.ts_practice_attempts)::bigint,
+    (select count(distinct (attempts.user_id, attempts.profile_id)) from public.ts_practice_attempts attempts where attempts.created_at >= (extract(epoch from (now() - interval '7 days')) * 1000)::bigint)::bigint,
+    (select count(*) from public.ts_practice_attempts attempts where attempts.created_at >= (extract(epoch from (now() - interval '7 days')) * 1000)::bigint)::bigint,
+    (select round(avg(attempts.score::numeric / nullif(attempts.total, 0) * 100), 1) from public.ts_practice_attempts attempts where attempts.created_at >= (extract(epoch from (now() - interval '7 days')) * 1000)::bigint)
+  from public.ts_learner_profiles profiles
+  where exists (select 1 from public.ts_admin_users admins where admins.user_id = (select auth.uid()));
+$$;
+
+revoke all on function public.ts_admin_overview() from public;
+grant execute on function public.ts_admin_overview() to authenticated;
 
 -- After signing in once with your owner email, run this separately and replace the email:
 -- insert into public.ts_admin_users (user_id)

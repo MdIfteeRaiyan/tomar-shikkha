@@ -59,5 +59,7 @@ Vercel will deploy the pushed commit automatically.
 8. Open Guardian View and confirm the weekly summary is readable.
 9. Submit a question report and open Privacy, Terms, and Feedback.
 10. In browser dev tools, switch the network to Offline and reload once; the previously loaded learning screen should still open.
+11. Open **My Study Routine**, generate a 3-day and a 7-day plan, and confirm both fit the screen.
+12. After completing practices in two subjects, open **My Grade Report** and confirm the weaker subject appears in the reminder.
 
 If Supabase shows a setup error after deployment, rerun the latest `supabase/schema.sql` and then redeploy from Vercel.
